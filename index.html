@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<body style="font-size:1em;">
+  <center>
+    <div class="dwarftable">
+      Vo (litres): <input name="Vo" label="Vo" type="text" id="Vo" /> <br/>
+      L (mm): <input name="L" label="L" type="text" id="L" /> <br/>
+      D (mm): <input name="D" label="D" type="text" id="D" /> <br />
+      Orientation:
+      <select id="orientation">
+        <option value="--select--">--select--</option>
+        <option value="Horizontal">Horizontal</option>
+        <option value="Vertical">Vertical</option>
+      </select>
+      <input style="font-size:14px;" value="submit" type="submit" id="S" onClick="calculatePlot()" />
+      <div id="message"> </div>
+      <table id="results">
+        <tr>
+          <td> </td> <td> </td>
+        </tr>
+      </table>
+    </div>
+  </center>
+<style type="text/css">
+div.dwarftable {
+ font-family: verdana,arial,sans-serif;
+ font-size: 1.12vmax;
+ color:#333333;
+ border-width: 1px;
+ border-color: #666666;
+ border-collapse: collapse;
+ margin-top: 1.5vmax;
+ margin-left:1.5vmax;
+ margin-right:1.5vmax;
+}
+div.dwarftable th {
+ border-width: 1px;
+ padding: 8px;
+ border-style: solid;
+ border-color: #666666;
+ background-color: #dedede;
+}
+div.dwarftable td {
+ border-width: 1px;
+ padding: 2px;
+ border-style: solid;
+ border-color: #666666;
+}
+
+div.dwarftable tr {
+ background-color: #FFCCFF;
+}
+
+div.dwarftable tr:nth-child(odd) {
+  background-color: #FFFFFF; // #FFCCFF;
+}
+
+div.dwarftable tr:nth-child(even) {
+  background-color: #DCDCDC; // #ffffff;
+}
+
+</style>
+
+
+<script>
+function calculatePlot(){
+
+  // Initialize message holder
+  var message = document.getElementById("message");
+  message.style.color = "black";
+  message.style.fontWeight = 'bold';
+
+  // get initial volume, length and diameter
+  var Vo = document.getElementById("Vo").value;
+
+  if(!Vo || !Vo.trim()) {
+    message.innerHTML = "Vo should not be empty!";
+    message.style.color = "red";
+    return;
+  }
+  else
+    Vo = parseFloat(Vo);
+
+  var l = document.getElementById("L").value;
+  if(!l || !l.trim()) {
+    message.innerHTML = "L should not be empty!";
+    message.style.color = "red";
+    return;
+  }
+
+  var d = document.getElementById("D").value;
+  if(!d || !d.trim()) {
+    message.innerHTML = "D should not be empty!";
+    message.style.color = "red";
+    return;
+  }
+
+  // get selected index
+  var orNode = document.getElementById("orientation");
+  var orientation = orNode.options[orNode.selectedIndex].value;
+
+  // get table object
+  var table = document.getElementById("results");
+
+  // clear contents
+  table.innerHTML = "";
+  //table.width= '100%';
+
+  // Create table header
+  var header = table.insertRow(0);
+  header.insertCell(0).innerHTML = "height (mm)";
+  header.insertCell(1).innerHTML = "Volume (litres)";
+
+  if(orientation === "Vertical") {
+    var R = 0.5 * d;
+    var k = Math.PI * R * R;
+    processVertical(Vo, l, k, table);
+    message.innerHTML = "Vertical tank, k = " + toRepresentable(k) + " mm2";
+  }
+  else if(orientation == "Horizontal") {
+    processHorizontal(Vo, l, d, table);
+    message.innerHTML =  "Horizontal tank";
+  }
+  else {
+     message.innerHTML = "Please select orientation";
+     message.style.color = "red";
+  }
+}
+
+function processVertical(Vo, l, k, table) {
+
+  for(len = 0; len <= l; len++) {
+
+    // calculate volume
+    volume = k * len;
+    volume = toLitres(volume);
+    volume = volume + Vo;
+    volume = toRepresentable(volume);
+
+    // create new row
+    var row = table.insertRow(len + 1);
+    var hCell = row.insertCell(0);
+    var volCell = row.insertCell(1);
+
+    // Add values to cells
+    hCell.innerHTML = len;
+    volCell.innerHTML = volume;
+  }
+}
+
+function processHorizontal(Vo, l, d, table) {
+
+  // loop throught steps of the diameter
+  for(h = 0; h <= d; h++) {
+
+    // calculate volume
+     R = 0.5 * d;
+     volume = l * ( (R * R * Math.acos((R - h) / R))  -  ( (R - h) * Math.sqrt((2*R*h) - (h*h)) ) );
+     volume = toLitres(volume);
+     volume = volume + Vo;
+     volume = toRepresentable(volume);
+
+    // create new row
+    var row = table.insertRow(h+1);
+    var hCell = row.insertCell(0);
+    var volCell = row.insertCell(1);
+
+    // Add values to cells
+    hCell.innerHTML = h;
+    volCell.innerHTML = volume;
+  }
+}
+
+function toLitres(volume) {
+  return (volume * 0.000001);
+}
+
+function toRepresentable(volume) {
+  return parseFloat(volume.toExponential(Math.max(1,2+Math.log10(Math.abs(volume)))));
+
+  //  if(volume > 0.004)
+  //    return volume.toFixed(2);
+}
+</script>
+
+</body>
+</html>
